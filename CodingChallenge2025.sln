@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodingChallenge2025", "CodingChallenge2025\CodingChallenge2025.csproj", "{8B166E01-EE39-4154-8C5E-59E99D736DBE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodingChallenge2025.Tests", "CodingChallenge2025.Tests\CodingChallenge2025.Tests.csproj", "{B89AB88C-DB5B-4751-8738-8E4A75F4D32E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{8B166E01-EE39-4154-8C5E-59E99D736DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B166E01-EE39-4154-8C5E-59E99D736DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B166E01-EE39-4154-8C5E-59E99D736DBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B89AB88C-DB5B-4751-8738-8E4A75F4D32E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B89AB88C-DB5B-4751-8738-8E4A75F4D32E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B89AB88C-DB5B-4751-8738-8E4A75F4D32E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B89AB88C-DB5B-4751-8738-8E4A75F4D32E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
