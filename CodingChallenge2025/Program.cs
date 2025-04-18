@@ -1,9 +1,4 @@
-﻿using CsvHelper.Configuration.Attributes;
-
-namespace CodingChallenge2025;
-
-using CsvHelper;
-using System.Globalization;
+﻿namespace CodingChallenge2025;
 
 internal static class Program
 {
@@ -16,162 +11,31 @@ internal static class Program
     private static void Main(string[] args)
     {
 
-        //declare input variable
-        string dirPath = ".";
-
-        // Check for args (Challenge Selection)
-        if (args.Length > 0)
-        {
-            // If arguments are provided, use first as directory input
-            dirPath = args[0];
-        }
+        //read the directory path from command line arguments or use current directory
+        string dirPath = args.Length > 0 ? args[0] : ".";
         
+        // Set the console color to green for better visibility then reset it
         Console.ForegroundColor = ConsoleColor.Green;
         // Inform the user of the directory being used
         Console.WriteLine($"Reading Data from: {dirPath}\\");
         Console.ResetColor();
         
-        // Read the CSV files into lists of records
-        List<Device> devices = ReadDeviceCsv($"{dirPath}\\Devices.csv");
-        List<Data> data = ReadDataCsv($"{dirPath}\\Data1.csv");
-        data.AddRange(ReadDataCsv($"{dirPath}\\Data2.csv"));
+        // Dependency injection for better testability
+        IDataReader dataReader = new CsvDataReader(dirPath);
+        IDataProcessor dataProcessor = new RainfallDataProcessor();
+        IOutputHandler outputHandler = new ConsoleOutputHandler();
         
-        // Foreach device, find the corresponding data records and print average rainfall for past 4 hours and whether it is increasing or decreasing
+        // Read devices and data
+        var devices = dataReader.ReadDevices();
+        var data = dataReader.ReadData();
+        
+        // Process and display results
         foreach (var device in devices)
         {
-            // Print device information
-            Console.WriteLine($"DeviceId: {device.DeviceId}; DeviceName: {device.DeviceName}; Location: {device.Location};");
-            
-            //Last TimeStamp
-            DateTime lastTimeStamp = data.Where(x => x.DeviceId == device.DeviceId).Max(x => x.Timestamp);
-            
-            //Last 4 hours of data
-            var last4Hours = data.Where(x => x.DeviceId == device.DeviceId && x.Timestamp >= lastTimeStamp.AddHours(-4)).ToList();
-            
-            //Average Rainfall 
-            var avgRainfall = last4Hours.Average(x => x.DataValue);
-            
-            //Trend Increasing or Decreasing average of first 2 values vs last 2 values
-            var trend = last4Hours.Count() > 3 ? (last4Hours.Take(2).Average(x => x.DataValue) < last4Hours.Skip(2).Average(x => x.DataValue) ? "Increasing" : "Decreasing") : "N/A";
-            
-            string rainfallStatus = avgRainfall switch
-            {
-                < 10 => "Green",
-                < 15 => "Amber",
-                _ => "Red"
-            };
-            
-            // Rainfall status to red if any value is greater than 30
-            if (last4Hours.Any(x => x.DataValue > 30))
-            {
-                rainfallStatus = "Red";
-            }
-            
-            // Set the console color based on the rainfallStatus
-            Console.ForegroundColor = rainfallStatus switch
-            {
-                "Green" => ConsoleColor.Green,
-                "Amber" => ConsoleColor.Yellow,
-                _ => ConsoleColor.Red
-            };
-
-            Console.WriteLine($"Average rainfall {avgRainfall:F2}mm; Status: {rainfallStatus}; Trend: {trend};");
-            
-            Console.ResetColor();
-            
+            var result = dataProcessor.ProcessData(device, data);
+            outputHandler.DisplayResult(device, result);
         }
-    }
-    
-    ///<summary>
-    ///Read Device CSV file and parse it into records using CsvHelper (dotnet add package CsvHelper)
-    ///</summary>
-    ///<param name="filePath">CSV file path</param>
-    ///<returns>List of Device records</returns>
-    private static List<Device> ReadDeviceCsv(string filePath)
-    {
-        // Read the CSV file and parse it into records
-        try
-        {
-            using var reader = new StreamReader(filePath);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-            
-            // Return the records as a list
-            return csv.GetRecords<Device>().ToList();
-        }
-        catch (FileNotFoundException ex)
-        {
-            // Handle file not found exception
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
-        }
-        catch (Exception ex)
-        {
-            // Handle any other exceptions
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            Console.ResetColor();
-        }
-        Environment.Exit(1); // Exit the program with an error code
-        return [];
-    }
-    
         
-    ///<summary>
-    ///Read Data CSV file and parse it into records using CsvHelper (dotnet add package CsvHelper)
-    ///</summary>
-    ///<param name="filePath">CSV file path</param>
-    ///<returns>List of Data records</returns>
-    private static List<Data> ReadDataCsv(string filePath)
-    {
-        // Read the CSV file and parse it into records
-        try
-        {
-            using var reader = new StreamReader(filePath);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-            
-            // Return the records as a list
-            return csv.GetRecords<Data>().ToList();
-        }
-        catch (FileNotFoundException ex)
-        {
-            // Handle file not found exception
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
-        }
-        catch (Exception ex)
-        {
-            // Handle any other exceptions
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"An error occurred: {ex.Message}");
-        }
-        Environment.Exit(1); // Exit the program with an error code
-        return [];
     }
     
-    ///<summary>
-    /// Device Definition Class
-    /// </summary>
-    public class Device
-    {
-        [Name("Device ID")]
-        public required int DeviceId { get; set; }
-        [Name("Device Name")]
-        public required string DeviceName { get; set; }
-        public required string Location { get; set; }
-    }
-    
-    ///<summary>
-    /// Data Definition Class
-    /// </summary>
-    public class Data
-    {
-        [Name("Device ID")]
-        public required int DeviceId { get; set; }
-        [Name("Rainfall")]
-        public required double DataValue { get; set; }
-        [Name("Time")] 
-        public required DateTime Timestamp { get; set; }
-    }
 }
