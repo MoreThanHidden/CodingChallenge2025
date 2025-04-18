@@ -33,23 +33,52 @@ internal static class Program
         
         // Read the CSV files into lists of records
         List<Device> devices = ReadDeviceCsv($"{dirPath}\\Devices.csv");
-        List<Data> data1 = ReadDataCsv($"{dirPath}\\Data1.csv");
-        List<Data> data2 = ReadDataCsv($"{dirPath}\\Data2.csv");
+        List<Data> data = ReadDataCsv($"{dirPath}\\Data1.csv");
+        data.AddRange(ReadDataCsv($"{dirPath}\\Data2.csv"));
         
-        // Iterate through the records and print the values
-        foreach (var record in devices)
+        // Foreach device, find the corresponding data records and print average rainfall for past 4 hours and whether it is increasing or decreasing
+        foreach (var device in devices)
         {
-            Console.WriteLine($"DeviceId: {record.DeviceId}; DeviceName: {record.DeviceName}; Location: {record.Location};");
-        }
-        
-        foreach (var record in data1)
-        {
-            Console.WriteLine($"DeviceId: {record.DeviceId}; DataValue: {record.DataValue}; Timestamp: {record.Timestamp};");
-        }
-        
-        foreach (var record in data2)
-        {
-            Console.WriteLine($"DeviceId: {record.DeviceId}; DataValue: {record.DataValue}; Timestamp: {record.Timestamp};");
+            // Print device information
+            Console.WriteLine($"DeviceId: {device.DeviceId}; DeviceName: {device.DeviceName}; Location: {device.Location};");
+            
+            //Last TimeStamp
+            DateTime lastTimeStamp = data.Where(x => x.DeviceId == device.DeviceId).Max(x => x.Timestamp);
+            
+            //Last 4 hours of data
+            var last4Hours = data.Where(x => x.DeviceId == device.DeviceId && x.Timestamp >= lastTimeStamp.AddHours(-4)).ToList();
+            
+            //Average Rainfall 
+            var avgRainfall = last4Hours.Average(x => x.DataValue);
+            
+            //Trend Increasing or Decreasing average of first 2 values vs last 2 values
+            var trend = last4Hours.Count() > 3 ? (last4Hours.Take(2).Average(x => x.DataValue) < last4Hours.Skip(2).Average(x => x.DataValue) ? "Increasing" : "Decreasing") : "N/A";
+            
+            string rainfallStatus = avgRainfall switch
+            {
+                < 10 => "Green",
+                < 15 => "Amber",
+                _ => "Red"
+            };
+            
+            // Rainfall status to red if any value is greater than 30
+            if (last4Hours.Any(x => x.DataValue > 30))
+            {
+                rainfallStatus = "Red";
+            }
+            
+            // Set the console color based on the rainfallStatus
+            Console.ForegroundColor = rainfallStatus switch
+            {
+                "Green" => ConsoleColor.Green,
+                "Amber" => ConsoleColor.Yellow,
+                _ => ConsoleColor.Red
+            };
+
+            Console.WriteLine($"Average rainfall {avgRainfall:F2}mm; Status: {rainfallStatus}; Trend: {trend};");
+            
+            Console.ResetColor();
+            
         }
     }
     
@@ -141,7 +170,7 @@ internal static class Program
         [Name("Device ID")]
         public required int DeviceId { get; set; }
         [Name("Rainfall")]
-        public required string DataValue { get; set; }
+        public required double DataValue { get; set; }
         [Name("Time")] 
         public required DateTime Timestamp { get; set; }
     }
